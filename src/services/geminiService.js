@@ -96,47 +96,64 @@ Format everything cleanly. Provide ONLY the JSON. No markdown backticks.`;
 
 async function callGemini(apiKey, prompt, base64Image = null) {
   if (!apiKey) {
-    throw new Error("Gemini API Key is missing. Check your .env file.");
+    throw new Error("Gemini API Key is missing. Check your Vercel Environment Variables.");
   }
 
-  console.log(`Calling Gemini (${GEMINI_MODEL}) with ${base64Image ? 'Image' : 'Text'}...`);
+  // Experimental model pool to ensure we find an available one in the user's region/account
+  const modelsToTry = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-2.0-flash-exp",
+    "gemini-1.5-pro"
+  ];
 
-  const parts = [{ text: prompt }];
-  
-  if (base64Image) {
-    const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    parts.push({
-      inline_data: {
-        mime_type: "image/jpeg",
-        data: cleanBase64
-      }
-    });
-  }
+  let lastError = null;
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }]
-      })
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Gemini API Error Response:", errorText);
-    let errorMessage = `API Error: ${response.status}`;
+  for (const model of modelsToTry) {
     try {
-      const errorJson = JSON.parse(errorText);
-      errorMessage = errorJson.error?.message || errorMessage;
-    } catch (e) {}
-    throw new Error(errorMessage);
+      console.log(`Attempting Gemini (${model}) via v1beta...`);
+      const parts = [{ text: prompt }];
+      
+      if (base64Image) {
+        const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
+        parts.push({
+          inline_data: {
+            mime_type: "image/jpeg",
+            data: cleanBase64
+          }
+        });
+      }
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts }]
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`Model ${model} failed:`, errorText);
+        lastError = new Error(errorText);
+        continue; // Try next model
+      }
+
+      const data = await response.json();
+      return processGeminiResponse(data);
+    } catch (err) {
+      console.warn(`Connection to ${model} failed:`, err);
+      lastError = err;
+    }
   }
 
-  const data = await response.json();
-  
+  throw lastError || new Error("All AI models failed to respond. Please check your API key and network.");
+}
+
+function processGeminiResponse(data) {
   try {
     const text = data.candidates[0].content.parts[0].text;
     const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -110,18 +110,25 @@ const calculateMetrics = (landmarks) => {
   
   const postureScore = Math.max(0, 100 - (shoulderSymmetry * 1000) - (hipSymmetry * 1000));
   
-  // REALISTIC HEURISTICS: Weight-Aware Estimation
+  // REALISTIC HEURISTICS: Weight-Aware & Shape-Aware Estimation
   // Get weight from global context if possible, or use a realistic default
   const userWeightString = window.fitmorphData?.userProfile?.weight || "70kg";
   const userWeight = parseInt(userWeightString) || 70;
 
   // Body Fat % (Realistic range 10-35%)
-  // Hip/Shoulder ratio is a weak proxy, so we bound it tightly
+  // Hip/Shoulder ratio and Torso proportion used as proxies
   const hToSRatio = hipWidth / (shoulderWidth || 0.4);
-  const bodyFat = Math.max(12, Math.min(32, (hToSRatio * 20) + (Math.random() * 2)));
+  const tProp = parseFloat(torsoProportion) || 1;
+  
+  // Adding subtle randomization centered around the shape analysis to avoid "sticky" numbers
+  const baseFat = (hToSRatio * 18) + (tProp * 2);
+  const randomVariance = (Math.random() * 1.5) - 0.75;
+  const bodyFat = Math.max(10, Math.min(35, baseFat + randomVariance));
 
-  // Muscle Mass (Cannot exceed total weight! Typically 35-50% for healthy adults)
-  const muscleMass = Math.max(30, Math.min(userWeight * 0.6, (shoulderWidth / (hipWidth || 0.4)) * (userWeight * 0.5)));
+  // Muscle Mass (Typically 35-50% for healthy adults)
+  const baseMuscle = (shoulderWidth / (hipWidth || 0.4)) * (userWeight * 0.45);
+  const muscleVariance = (Math.random() * 2) - 1;
+  const muscleMass = Math.max(25, Math.min(userWeight * 0.65, baseMuscle + muscleVariance));
 
   return {
     bodyFat: bodyFat.toFixed(1),
