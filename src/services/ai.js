@@ -1,4 +1,5 @@
-import { Pose } from '@mediapipe/pose';
+// MediaPipe Pose is now loaded via global script in index.html to avoid Vite bundling issues
+// import { Pose } from '@mediapipe/pose';
 
 // Landmark indices for MediaPipe Pose
 export const JOINTS = {
@@ -17,9 +18,15 @@ let poseInstance = null;
 const getPose = async () => {
   if (poseInstance) return poseInstance;
 
-  poseInstance = new Pose({
+  // Use the global Pose from index.html script tag
+  const PoseConstructor = window.Pose;
+  if (!PoseConstructor) {
+    throw new Error("MediaPipe AI not initialized. Please check your internet connection and refresh.");
+  }
+
+  poseInstance = new PoseConstructor({
     locateFile: (file) => {
-      // Pinning to exact version to avoid mismatches with the npm package
+      // Pinning to exact version to avoid mismatches
       return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`;
     },
   });
