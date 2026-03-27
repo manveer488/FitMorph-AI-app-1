@@ -98,7 +98,8 @@ export default function BodyScan() {
     setGenerating(true);
     try {
       setAiAnalysisStep("Compressing biometrics...");
-      const resizedBase64 = await resizeImage(file, 1024);
+      // Reduced resolution to 800px for faster mobile upload and processing
+      const resizedBase64 = await resizeImage(file, 800);
 
       setAiAnalysisStep("Uploading to secure AI...");
       console.log("Starting Real AI Vision analysis with compressed image...");
