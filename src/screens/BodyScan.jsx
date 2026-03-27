@@ -125,8 +125,9 @@ export default function BodyScan() {
       console.log("Real AI metrics and Plan synchronized atomically.");
     } catch (err) {
       console.error("Real AI analysis failed:", err);
-      // Fallback to heuristics but notify user
-      alert("AI Vision analysis slow or failed. Using preliminary biometric estimation.");
+      // More descriptive error for Vercel/Production debugging
+      const errorMsg = err.message || "Unknown error";
+      alert(`AI Transformation Plan failed: ${errorMsg}. Using preliminary biometric estimation for now.`);
     } finally {
       setGenerating(false);
     }
