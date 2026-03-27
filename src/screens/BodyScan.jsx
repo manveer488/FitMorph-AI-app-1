@@ -104,7 +104,7 @@ export default function BodyScan() {
       setAiAnalysisStep("Uploading to secure AI...");
       console.log("Starting Real AI Vision analysis with compressed image...");
       
-      setAiAnalysisStep("Analyzing physique...");
+      setAiAnalysisStep("Analyzing Physique...");
       const plan = await generateTransformationPlan(scanResult.metrics || scanResult, user.profile, resizedBase64);
       console.log("Real AI analysis complete:", plan);
       
@@ -230,7 +230,10 @@ export default function BodyScan() {
               </div>
               <div className="flex items-baseline gap-1">
                 {generating ? (
-                  <span className="text-sm font-bold text-primary animate-pulse">{aiAnalysisStep || "AI ANALYZING..."}</span>
+                  <div className="flex flex-col items-center gap-1 animate-pulse">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">Analyzing...</span>
+                  </div>
                 ) : (
                   <>
                     <span className="text-2xl font-black font-urbanist">{metrics.bodyFat?.toString().replace(/%/g, '')}</span>
@@ -253,7 +256,10 @@ export default function BodyScan() {
               </div>
               <div className="flex items-baseline gap-1">
                 {generating ? (
-                  <span className="text-sm font-bold text-accent-cyan animate-pulse">{aiAnalysisStep || "AI ANALYZING..."}</span>
+                  <div className="flex flex-col items-center gap-1 animate-pulse">
+                    <div className="w-8 h-8 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-[10px] font-black text-accent-cyan uppercase tracking-widest">Analyzing...</span>
+                  </div>
                 ) : (
                   <>
                     <span className="text-2xl font-black font-urbanist">{metrics.muscleMass?.toString().replace(/kg/g, '')}</span>
