@@ -10,6 +10,8 @@ const GEMINI_MODEL = "gemini-1.5-flash-latest";
  * @param {string} base64Image - Optional base64 encoded image for Real AI vision analysis.
  */
 export async function generateTransformationPlan(scanData, userProfile, base64Image = null) {
+  // VERSION WATERMARK - Help user verify latest deployment
+  console.log("FitMorph Engine: BUILD_ID_8821 - Universal Fallback Active");
   console.log("Generating Expertise-Driven Transformation Plan", { scanData, userProfile, hasImage: !!base64Image });
   
   const prompt = `
