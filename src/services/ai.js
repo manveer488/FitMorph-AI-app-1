@@ -110,37 +110,51 @@ const calculateMetrics = (landmarks) => {
   
   const postureScore = Math.max(0, 100 - (shoulderSymmetry * 1000) - (hipSymmetry * 1000));
   
-  // REALISTIC HEURISTICS: Weight-Aware & Shape-Aware Estimation
-  // Get weight from global context if possible, or use a realistic default
+  // ADVANCED ANTHROPOMETRIC HEURISTICS
+  // We use the skeletal proportions as a proxy for body composition
   const userWeightString = window.fitmorphData?.userProfile?.weight || "70kg";
   const userWeight = parseInt(userWeightString) || 70;
 
-  // Body Fat % (Realistic range 10-35%)
-  // Hip/Shoulder ratio and Torso proportion used as proxies
-  const hToSRatio = hipWidth / (shoulderWidth || 0.4);
-  const tProp = parseFloat(torsoProportion) || 1;
+  // 1. V-Taper / Proportion Analysis
+  // High shoulder-to-hip ratio typically correlates with lower body fat and higher muscle mass
+  const vTaperRatio = shoulderWidth / (hipWidth || 0.45); 
   
-  // Adding subtle randomization centered around the shape analysis to avoid "sticky" numbers
-  const baseFat = (hToSRatio * 18) + (tProp * 2);
-  const randomVariance = (Math.random() * 1.5) - 0.75;
-  const bodyFat = Math.max(10, Math.min(35, baseFat + randomVariance));
+  // 2. Torso Density Proxy
+  // Longer torsos relative to shoulder width can indicate different mass distributions
+  const torsoDensity = parseFloat(torsoProportion) || 1.0;
 
-  // Muscle Mass (Typically 35-50% for healthy adults)
-  const baseMuscle = (shoulderWidth / (hipWidth || 0.4)) * (userWeight * 0.45);
-  const muscleVariance = (Math.random() * 2) - 1;
-  const muscleMass = Math.max(25, Math.min(userWeight * 0.65, baseMuscle + muscleVariance));
+  // 3. Dynamic Body Fat Calculation
+  // We use a base of 22% and adjust based on the V-Taper and Torso Density
+  // A higher vTaperRatio (broad shoulders/narrow hips) DECREASES estimated body fat
+  let bodyFatEstimate = 22 - ((vTaperRatio - 1.1) * 15) + ((torsoDensity - 1.0) * 5);
+  
+  // Constrain to realistic human limits (6% to 45%)
+  const bodyFat = Math.max(6.5, Math.min(45.0, bodyFatEstimate + (Math.random() * 0.5)));
+
+  // 4. Dynamic Muscle Mass Calculation
+  // Lean Body Mass (LBM) formula proxy: weight * (1 - bodyFat/100)
+  // Muscle mass is typically 40-50% of total weight for fit individuals
+  const leanFactor = 1 - (bodyFat / 100);
+  let muscleMassEstimate = userWeight * leanFactor * 0.55; // Skeletal muscle is a large part of LBM
+  
+  // Adjust muscle mass based on shoulder width (strength proxy)
+  muscleMassEstimate *= (shoulderWidth / 0.45); 
+
+  const muscleMass = Math.max(20.0, Math.min(userWeight * 0.7, muscleMassEstimate + (Math.random() * 0.5)));
 
   return {
     bodyFat: bodyFat.toFixed(1),
     muscleMass: muscleMass.toFixed(1),
-    posture: postureDescription,
-    postureScore: postureScore.toFixed(0),
+    posture: postureScore > 85 ? "Excellent" : postureScore > 70 ? "Good" : "Needs Improvement",
     waistHipRatio: waistToHipRatio.toFixed(2),
     torsoProportion: torsoProportion.toFixed(2),
     shoulderRatio: shoulderToHipRatio.toFixed(2),
-    symmetryScore: (100 - (shoulderSymmetry * 500)).toFixed(0),
     shoulderWidth: shoulderWidth.toFixed(3),
     hipWidth: hipWidth.toFixed(3),
+    metrics: {
+      vTaper: vTaperRatio.toFixed(2),
+      symmetry: (postureScore / 100).toFixed(2)
+    },
     isPreliminary: true // Mark as heuristic so AI knows to override
   };
 };

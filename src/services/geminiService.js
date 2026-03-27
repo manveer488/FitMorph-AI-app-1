@@ -99,12 +99,17 @@ async function callGemini(apiKey, prompt, base64Image = null) {
     throw new Error("Gemini API Key is missing. Check your Vercel Environment Variables.");
   }
 
-  // Experimental model pool to ensure we find an available one in the user's region/account
+  // Comprehensive model pool to handle all regions and account types
+  // Including common variants and the user's requested "gemini-3-flash" just in case
   const modelsToTry = [
     "gemini-1.5-flash",
     "gemini-1.5-flash-latest",
+    "gemini-2.0-flash", 
     "gemini-2.0-flash-exp",
-    "gemini-1.5-pro"
+    "gemini-1.5-flash-8b",
+    "gemini-3-flash", // Non-standard, but specific user request
+    "gemini-1.5-pro",
+    "gemini-pro"
   ];
 
   let lastError = null;
